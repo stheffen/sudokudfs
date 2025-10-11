@@ -1,6 +1,6 @@
 {
   "homepage": "https://jepryanuslewi.github.io/SUDOKU-SOLVER-USING-DFS-ALGORITHM/",
-  "name": "dfsforsudoku",
+  "name": "sudoku-dfs",
   "private": true,
   "version": "0.0.0",
   "type": "module",

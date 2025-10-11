@@ -73,7 +73,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <h1>Sudoku Solver With DFS</h1>
+      <h1>Sudoku Solver (DFS Algoritm)</h1>
       <div className="board-grid">
         <div>
         {board.map((row, rIdx) =>
