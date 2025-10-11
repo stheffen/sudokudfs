@@ -7,8 +7,9 @@ body {
   height: 100vh;
 }
 
-h1{
-    color: greenyellow;
+h1 {
+  color: greenyellow;
+  text-align: center;
 }
 
 .app-container {
@@ -20,18 +21,24 @@ h1{
 }
 
 .board-grid {
-  width: 771px;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 1px; 
   margin-bottom: 10px;
   border: 2px solid black;
   background-color: white;
   cursor: pointer;
+  width: fit-content;
+  justify-content: center;
+  align-items: center;
 }
 
 .board-cell {
- cursor: pointer;
-  width: 80px;
+  cursor: pointer;
+  width: 3vw; 
+  height: 3vw; 
   text-align: center;
-  font-size: 1.125rem;
+  font-size: clamp(0.8rem, 2vw, 1.2rem);
   background-color: rgb(19, 18, 18);
   border: 1px solid #d1d5db;
   color: greenyellow;
@@ -39,8 +46,10 @@ h1{
 
 .button-container {
   display: flex;
-  gap: 1rem; 
-  margin-top: 1.5rem; 
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 button {
@@ -49,78 +58,56 @@ button {
   border: none;
   border-radius: 0.25rem;
   cursor: pointer;
-  background-color: rgba(0, 0, 0, 0.847); 
-  color: white;
-  transition: background-color 0.3s ease-in-out;
+  background-color: rgba(0, 0, 0, 0.847);
   color: greenyellow;
+  transition: background-color 0.3s ease-in-out;
 }
+
 button:hover {
   background-color: rgba(6, 5, 5, 0.741);
 }
 
-/* 📱 HP kecil */
+/* HP */
 @media (max-width: 480px) {
-  h1{
-    font-size: 2rem;
-    }
-  .board-grid {
-    width: 306px;
-    padding-left: 1px ;
-  }
-  .board-cell {
-    width: 28px;
-    height: 28px;
+  p{
+    max-width: 70vw;
     font-size: 0.8rem;
+    text-align: start;
+  }
+  h1{
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .board-grid {
+    grid-template-columns: repeat(9, 1fr);
+    width: 74vw;
   }
 
-  button {
-    padding: 0.8rem 2rem;
+  .board-cell {
+    width: 6vw;
+    height: 6vw;
     font-size: 1rem;
-  }
-
-  .buttons {
-    flex-direction: column;
   }
 }
 
-/* 💻 Tablet */
+
+/* Tablet */
 @media (min-width: 481px) and (max-width: 768px) {
-  h1{
-    font-size: 2rem;
-    }
   .board-grid {
-    width: 367px;
-    padding-left: 1px ;
+    max-width: 80vw;
   }
   .board-cell {
-    width: 35px;
-    height: 35px;
-    font-size: 0.8rem;
-  }
-
-  button {
-    padding: 0.8rem 2rem;
     font-size: 1rem;
   }
-
-  .buttons {
-    flex-direction: column;
-  }
 }
 
-/* 🖥️ Laptop atau Desktop besar */
+/* Desktop */
 @media (min-width: 769px) {
-  .board-cell {
-    width: 80px;
-    height: 40px;
-    font-size: 1.1rem;
+  .board-grid {
+    max-width: 720px;
   }
-
-  button {
-    padding: 0.8rem 1.4rem;
-    font-size: 1.1rem;
+  .board-cell {
+    font-size: 1.2rem;
   }
 }
-
-
-
+/* 
