@@ -2,14 +2,13 @@ import { useState } from "react";
 import "./app.css";
 
 export default function App() {
- // Buat board kosong (9x9)
+
   const emptyBoard = () =>
     Array.from({ length: 9 }, () => Array(9).fill(0));
 
   const [board, setBoard] = useState(emptyBoard());
   const [solving, setSolving] = useState(false);
 
-  // Ubah angka di cell
   const handleChange = (r, c, val) => {
     const num = Number(val) || 0;
     const copy = board.map((row) => [...row]);
@@ -17,13 +16,11 @@ export default function App() {
     setBoard(copy);
   };
 
-  // Cek apakah num valid di posisi (r, c)
   const isValid = (bd, num, r, c) => {
     // Baris dan kolom
     for (let i = 0; i < 9; i++)
       if (bd[r][i] === num || bd[i][c] === num) return false;
 
-    // Blok 3x3
     const sr = Math.floor(r / 3) * 3;
     const sc = Math.floor(c / 3) * 3;
     for (let i = 0; i < 3; i++)
@@ -35,7 +32,6 @@ export default function App() {
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
   
-  // Fungsi DFS 
   const solve = async (bd) => {
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
@@ -51,14 +47,13 @@ export default function App() {
               await sleep(10);
             }
           }
-          return false; // tidak ada angka valid
+          return false; 
         }
       }
     }
-    return true; // selesai
+    return true; 
   };
 
-  // Tombol "Solve"
   const handleSolve = () => {
     if (solving) return;
     setSolving(true);
@@ -68,7 +63,6 @@ export default function App() {
     setSolving(false);
   };
 
-  // Tombol "Reset"
   const handleReset = () => setBoard(emptyBoard());
 
   return (
