@@ -58,13 +58,13 @@ button:hover {
   background-color: rgba(6, 5, 5, 0.741);
 }
 
-/* 📱 HP kecil */
+/*HP*/
 @media (max-width: 480px) {
   h1{
     font-size: 2rem;
     }
   .board-grid {
-    width: 303px;
+    width: 305px;
     padding-left: 1px ;
   }
   .board-cell {
@@ -83,7 +83,7 @@ button:hover {
   }
 }
 
-/* 💻 Tablet */
+/*Tablet*/
 @media (min-width: 481px) and (max-width: 768px) {
   h1{
     font-size: 2rem;
@@ -108,7 +108,7 @@ button:hover {
   }
 }
 
-/* 🖥️ Laptop atau Desktop besar */
+/*Desktop*/
 @media (min-width: 769px) {
   .board-cell {
     width: 80px;
