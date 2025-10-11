@@ -1,0 +1,126 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+h1{
+    color: greenyellow;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #222325;
+  padding: 1.5rem;
+}
+
+.board-grid {
+  width: 771px;
+  margin-bottom: 10px;
+  border: 2px solid black;
+  background-color: white;
+  cursor: pointer;
+}
+
+.board-cell {
+ cursor: pointer;
+  width: 80px;
+  text-align: center;
+  font-size: 1.125rem;
+  background-color: rgb(19, 18, 18);
+  border: 1px solid #d1d5db;
+  color: greenyellow;
+}
+
+.button-container {
+  display: flex;
+  gap: 1rem; 
+  margin-top: 1.5rem; 
+}
+
+button {
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.847); 
+  color: white;
+  transition: background-color 0.3s ease-in-out;
+  color: greenyellow;
+}
+button:hover {
+  background-color: rgba(6, 5, 5, 0.741);
+}
+
+/* 📱 HP kecil */
+@media (max-width: 480px) {
+  h1{
+    font-size: 2rem;
+    }
+  .board-grid {
+    width: 303px;
+    padding-left: 1px ;
+  }
+  .board-cell {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+
+  button {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+}
+
+/* 💻 Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  h1{
+    font-size: 2rem;
+    }
+  .board-grid {
+    width: 367px;
+    padding-left: 1px ;
+  }
+  .board-cell {
+    width: 35px;
+    height: 35px;
+    font-size: 0.8rem;
+  }
+
+  button {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+}
+
+/* 🖥️ Laptop atau Desktop besar */
+@media (min-width: 769px) {
+  .board-cell {
+    width: 80px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  button {
+    padding: 0.8rem 1.4rem;
+    font-size: 1.1rem;
+  }
+}
+
+
+
