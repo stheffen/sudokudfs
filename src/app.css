@@ -16,8 +16,9 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 1rem;
   background-color: #222325;
-  padding: 1.5rem;
 }
 
 .board-grid {
@@ -80,7 +81,7 @@ button:hover {
   }
   .board-grid {
     grid-template-columns: repeat(9, 1fr);
-    width: 74vw;
+    width: fit-content;
   }
 
   .board-cell {
