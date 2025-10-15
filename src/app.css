@@ -58,8 +58,7 @@ h1 {
 }
 
 .button-container {
-  
-  margin-top: 10px;
+  margin-top: 25px;
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
