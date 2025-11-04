@@ -149,7 +149,7 @@ const App = () => {
   const [solving, setSolving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Pilih level");
-  const [solveTime, setSolveTime] = useState(null); // ⏱️ Tambahkan state untuk waktu
+  const [solveTime, setSolveTime] = useState(null); //Tambahkan state untuk waktu
 
   // Opsi level dengan jumlah sel yang dihapus
   const options = {
@@ -294,7 +294,7 @@ const App = () => {
         </div>
 
         <div className="dropdown">
-          <button onClick={() => setOpen(!open)}>{selected} ⏷</button>
+          <button onClick={() => setOpen(!open)}>{selected} </button>
           {open && (
             <div className="dropdown-menu">
               {Object.keys(options).map((opt) => (
