@@ -31,7 +31,7 @@ h1 {
   margin: -10px 50px;
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  gap: 1px; 
+  gap: 1px;
   border: 2px solid black;
   background-color: white;
   cursor: pointer;
@@ -43,8 +43,8 @@ h1 {
 .board-cell {
   cursor: pointer;
   box-shadow: 0 1px 10px rgba(47, 255, 220, 0.4);
-  width: 2.3vw; 
-  height: 2.3vw; 
+  width: 2.3vw;
+  height: 2.3vw;
   text-align: center;
   font-size: clamp(0.8rem, 2vw, 1.2rem);
   background-color: rgb(19, 18, 18);
@@ -88,11 +88,12 @@ button:hover {
   box-shadow: 0 1px 2px greenyellow;
   background-color: rgba(0, 0, 0, 0.834);
 }
-p{
+
+p {
   max-width: 60vh;
 }
 
-.solve-time{
+.solve-time {
   color: greenyellow;
   margin-top: 10px;
 }
@@ -106,7 +107,7 @@ p{
   position: absolute;
   background-color: #222;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   top: 100%;
   left: 0;
   min-width: 100px;
@@ -126,19 +127,47 @@ p{
 .dropdown-item:hover {
   background-color: #333;
 }
+
+label{
+  font-size: 1rem;
+  color: greenyellow;
+}
+
+.algorithm-selector{
+  margin-bottom: 20px;
+}
+
+select{
+  padding: 0.5rem 0.5rem;
+  outline: none;
+  color: greenyellow;
+  background-color: rgba(0, 0, 0, 0.834);
+  box-shadow: 0 1px 2px greenyellow;
+}
+
 /* HP */
 @media (max-width: 480px) {
-  p{
+  .app-container{
+    padding: 15px;
+  }
+  button {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  p {
     max-width: 70vw;
     font-size: 0.8rem;
     text-align: start;
   }
-  h1{
+
+  h1 {
     font-size: 1.2rem;
     margin-bottom: 1rem;
   }
+
   .board-grid {
-    margin: 0 ;
+    margin: 0;
     grid-template-columns: repeat(9, 1fr);
     width: fit-content;
   }
@@ -156,6 +185,7 @@ p{
   .board-grid {
     max-width: 80vw;
   }
+
   .board-cell {
     font-size: 1rem;
   }
@@ -166,6 +196,7 @@ p{
   .board-grid {
     max-width: 720px;
   }
+
   .board-cell {
     font-size: 1.2rem;
   }

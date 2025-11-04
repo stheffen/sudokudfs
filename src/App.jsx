@@ -42,13 +42,12 @@ const isValid = (board, r, c, num) => {
 // Fungsi untuk menunda eksekusi (untuk animasi)
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-// Fungsi untuk menyelesaikan Sudoku menggunakan DFS Algorithm
+// Fungsi untuk menyelesaikan Sudoku menggunakan DFS Algorithm =================================================
 const solveSudoku = async (bd, setBoard, animate = false) => {
   // Cari sel kosong
   for (let r = 0; r < 9; r++) {
-    // Iterasi kolom
     for (let c = 0; c < 9; c++) {
-      // Jika sel kosong ditemukan
+      // Mencari tempat kosong di papan sudoku
       if (bd[r][c] === 0) {
         // Coba angka 1-9
         for (let num = 1; num <= 9; num++) {
@@ -62,13 +61,13 @@ const solveSudoku = async (bd, setBoard, animate = false) => {
               setBoard(bd.map((row) => [...row]));
               await sleep(0.1);
             }
-            // Rekursif untuk menyelesaikan sisa papan
+            // Rekursif untuk menyelesaikan sisa papan, code ini yang membuat algoritma DFS
             if (await solveSudoku(bd, setBoard, animate)) return true;
-            // Jika tidak berhasil, hapus angka (backtrack)
+            // Jika tidak berhasil, hapus angka
             bd[r][c] = 0;
           }
         }
-        // Jika tidak ada angka yang valid, kembalikan false
+        // Jika tidak ada angka yang valid, kembalikan nilai false untuk coba angka 1-9 di sel sebelumnya
         return false;
       }
     }
@@ -76,6 +75,55 @@ const solveSudoku = async (bd, setBoard, animate = false) => {
   // Jika seluruh papan terisi, kembalikan true
   return true;
 };
+// =============================================================================================================
+
+// Fungsi untuk menyelesaikan Sudoku menggunakan BFS Algorithm ================================================
+const solveSudokuBFS = async (board, setBoard, animate = false) => {
+  // Buat antrian (queue) untuk menampung semua kemungkinan papan
+  const queue = [board.map((r) => [...r])];
+
+  while (queue.length > 0) {
+    // Ambil papan dari antrian
+    const bd = queue.shift();
+    let found = false;
+    let r = 0,
+      c = 0;
+
+    // Cari sel kosong pertama
+    for (r = 0; r < 9; r++) {
+      for (c = 0; c < 9; c++) {
+        if (bd[r][c] === 0) {
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    // Jika tidak ada sel kosong → berarti sudah selesai
+    if (!found) {
+      setBoard(bd);
+      return true;
+    }
+
+    // Coba angka 1–9 di sel kosong itu
+    for (let num = 1; num <= 9; num++) {
+      if (isValid(bd, r, c, num)) {
+        const newBoard = bd.map((row) => [...row]);
+        newBoard[r][c] = num;
+        queue.push(newBoard);
+
+        // Animasi pergerakan
+        if (animate && setBoard) {
+          setBoard(newBoard.map((row) => [...row]));
+          await sleep(0.1);
+        }
+      }
+    }
+  }
+  return false; // Jika tidak ada solusi
+};
+// =====================================================================================================
 
 // Fungsi untuk menghasilkan papan Sudoku yang sudah terisi
 const generateSolvedBoard = () => {
@@ -135,7 +183,7 @@ const removeCells = (board, removeCount) => {
     // Jika sel belum dihapus, hapus dan tingkatkan penghitung
     if (newBoard[r][c] !== 0) {
       newBoard[r][c] = 0;
-      
+
       removed++;
     }
   }
@@ -149,7 +197,9 @@ const App = () => {
   const [solving, setSolving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Pilih level");
-  const [solveTime, setSolveTime] = useState(null); // ⏱️ Tambahkan state untuk waktu
+  const [solveTime, setSolveTime] = useState(null);
+  const [algorithm, setAlgorithm] = useState("DFS");
+  const [originalPuzzle, setOriginalPuzzle] = useState(createEmptyBoard());
 
   // Opsi level dengan jumlah sel yang dihapus
   const options = {
@@ -160,7 +210,15 @@ const App = () => {
 
   // Reset papan saat level dipilih
   useEffect(() => {
-    if (selected !== "Pilih level") handleReset();
+    if (selected !== "Pilih level") {
+      const removeCount = options[selected];
+      const solved = generateSolvedBoard();
+      const puzzle = removeCells(solved, removeCount);
+      setBoard(puzzle);
+      setOriginalPuzzle(puzzle.map((row) => [...row]));
+      setErrors(createEmptyBoard());
+      setSolveTime(null);
+    }
   }, [selected]);
 
   // Tangani perubahan input sel
@@ -232,7 +290,12 @@ const App = () => {
     const start = performance.now();
 
     // Panggil fungsi penyelesaian dengan animasi
-    const solved = await solveSudoku(newBoard, setBoard, true);
+    let solved = false;
+    if (algorithm === "DFS") {
+      solved = await solveSudoku(newBoard, setBoard, true);
+    } else {
+      solved = await solveSudokuBFS(newBoard, setBoard, true);
+    }
 
     //Akhiri pengukuran waktu
     const end = performance.now();
@@ -240,10 +303,9 @@ const App = () => {
     setSolveTime(duration);
 
     // Perbarui papan jika berhasil diselesaikan
-    if (solved) {
-      setBoard(newBoard);
-      // Jika tidak ada solusi
-    } else {
+    if (solved && algorithm === "DFS") {
+      setBoard(newBoard); // hanya DFS yang perlu ini
+    } else if (!solved) {
       alert("Tidak ada solusi yang valid!");
     }
     setSolving(false);
@@ -251,15 +313,17 @@ const App = () => {
 
   // Fungsi untuk mengatur ulang papan berdasarkan level yang dipilih
   const handleReset = () => {
-    // Dapatkan jumlah sel yang akan dihapus berdasarkan level
-    const removeCount = options[selected];
-    // Hasilkan papan yang sudah terisi
-    const solved = generateSolvedBoard();
-    // Hapus sel untuk membuat teka-teki
-    const puzzle = removeCells(solved, removeCount);
-    // Perbarui papan dan kesalahan
-    setBoard(puzzle);
-    // Kosongkan kesalahan
+    // Jika sudah punya puzzle awal, cukup kembalikan ke sana
+    if (originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
+      setBoard(originalPuzzle.map((row) => [...row]));
+    } else {
+      // Kalau belum ada (pertama kali pilih level)
+      const removeCount = options[selected];
+      const solved = generateSolvedBoard();
+      const puzzle = removeCells(solved, removeCount);
+      setBoard(puzzle);
+      setOriginalPuzzle(puzzle.map((row) => [...row]));
+    }
     setErrors(createEmptyBoard());
     setSolveTime(null);
   };
@@ -267,6 +331,17 @@ const App = () => {
   return (
     <div className="app-container">
       <h1>Sudoku Solver (DFS Algorithm)</h1>
+      <label>Pilih algoritma : </label>
+      <div className="algorithm-selector">
+          <select
+            value={algorithm}
+            onChange={(e) => setAlgorithm(e.target.value)}
+            disabled={solving}
+          >
+            <option value="DFS">DFS (Depth First Search)</option>
+            <option value="BFS">BFS (Breadth First Search)</option>
+          </select>
+        </div>
 
       <div className="board-grid">
         {board.map((row, rIdx) =>
@@ -284,6 +359,7 @@ const App = () => {
       </div>
 
       <div className="controls">
+        
         <div className="button-container">
           <button onClick={handleSolve} disabled={solving}>
             {solving ? "Solving..." : "Solve"}
@@ -316,13 +392,13 @@ const App = () => {
 
       {solveTime && (
         <p className="solve-time">
-          Waktu penyelesaian level <b>{selected}</b>:{" "}
-          <b>{solveTime} detik</b>
+          Waktu penyelesaian level <b>{selected}</b>: <b>{solveTime} detik</b>
         </p>
       )}
 
       <p>
-        Isi angka 1–9 sesuai aturan Sudoku. Jika merah, berarti melanggar aturan.
+        Isi angka 1–9 sesuai aturan Sudoku. Jika merah, berarti melanggar
+        aturan.
         <br />
         Pilih level terlebih dahulu untuk memulai permainan.
       </p>
