@@ -15,7 +15,8 @@ h1 {
 }
 
 .app-container {
-  margin-top: -30px;
+  margin-top: -20px;
+  padding: 20px;
   border-radius: 20px;
   box-shadow: 0 1px 10px rgba(173, 255, 47, 0.8);
   display: flex;
@@ -24,7 +25,7 @@ h1 {
   justify-content: center;
   gap: 0.5rem;
   background-color: #222325;
-  height: 680px;
+  height: 650px;
 }
 
 .board-grid {
@@ -90,12 +91,13 @@ button:hover {
 }
 
 p {
-  max-width: 60vh;
+  max-width: 90vh;
 }
 
 .solve-time {
   color: greenyellow;
-  margin-top: 10px;
+  margin-top: 2px;
+  margin-bottom: -18px;
 }
 
 .dropdown {
@@ -119,7 +121,7 @@ p {
 }
 
 .dropdown-item {
-  padding: 8px 12px;
+  padding: 8px 4px;
   color: greenyellow;
   cursor: pointer;
 }
@@ -134,11 +136,12 @@ label{
 }
 
 .algorithm-selector{
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 select{
-  padding: 0.5rem 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.6rem;
   outline: none;
   color: greenyellow;
   background-color: rgba(0, 0, 0, 0.834);
