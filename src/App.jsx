@@ -75,7 +75,7 @@ const solveSudoku = async (bd, setBoard, animate = false) => {
   // Jika seluruh papan terisi, kembalikan true
   return true;
 };
-// =============================================================================================================
+// ============================================================================================================
 
 // Fungsi untuk menyelesaikan Sudoku menggunakan BFS Algorithm ================================================
 const solveSudokuBFS = async (board, setBoard, animate = false) => {
