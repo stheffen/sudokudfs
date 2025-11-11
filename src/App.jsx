@@ -43,7 +43,7 @@ const isValid = (board, r, c, num) => {
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // Fungsi untuk menyelesaikan Sudoku menggunakan DFS Algorithm =================================================
-const solveSudoku = async (bd, setBoard, animate = false) => {
+const solveSudokuDFS = async (bd, setBoard, animate = false) => {
   // Cari sel kosong
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
@@ -62,7 +62,7 @@ const solveSudoku = async (bd, setBoard, animate = false) => {
               await sleep(0.1);
             }
             // Rekursif untuk menyelesaikan sisa papan, code ini yang membuat algoritma DFS
-            if (await solveSudoku(bd, setBoard, animate)) return true;
+            if (await solveSudokuDFS(bd, setBoard, animate)) return true;
             // Jika tidak berhasil, hapus angka
             bd[r][c] = 0;
           }
@@ -197,7 +197,9 @@ const App = () => {
   const [solving, setSolving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Pilih level");
-  const [solveTime, setSolveTime] = useState(null); // ⏱️ Tambahkan state untuk waktu
+  const [solveTime, setSolveTime] = useState(null); 
+  const [algorithm, setAlgorithm] = useState("DFS");
+   const [originalPuzzle, setOriginalPuzzle] = useState(createEmptyBoard());
 
   // Opsi level dengan jumlah sel yang dihapus
   const options = {
@@ -290,7 +292,7 @@ const App = () => {
     // Panggil fungsi penyelesaian dengan animasi
     let solved = false;
     if (algorithm === "DFS") {
-      solved = await solveSudoku(newBoard, setBoard, true);
+      solved = await solveSudokuDFS(newBoard, setBoard, true);
     } else {
       solved = await solveSudokuBFS(newBoard, setBoard, true);
     }
@@ -332,7 +334,7 @@ const App = () => {
       <label>Pilih algoritma : </label>
       <div className="algorithm-selector">
           <select
-            value={algorithm}
+            value={algorithm} 
             onChange={(e) => setAlgorithm(e.target.value)}
             disabled={solving}
           >
