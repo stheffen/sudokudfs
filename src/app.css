@@ -24,33 +24,44 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: #222325;
+  background-color: black;
   height: 650px;
 }
 
 .board-grid {
   margin: -10px 50px;
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 1px;
+  grid-template-columns: repeat(9, 0fr);
   border: 2px solid black;
-  background-color: white;
   cursor: pointer;
   width: fit-content;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 1px 10px greenyellow ;
 }
 
 .board-cell {
   cursor: pointer;
-  box-shadow: 0 1px 10px rgba(47, 255, 220, 0.4);
   width: 2.3vw;
   height: 2.3vw;
   text-align: center;
   font-size: clamp(0.8rem, 2vw, 1.2rem);
   background-color: rgb(19, 18, 18);
-  border: 1px solid #d1d5db;
+  border: 1px solid gray ;
   color: greenyellow;
+}
+
+.border-top {
+  border-top: 3px solid whitesmoke;
+}
+.border-left {
+  border-left: 3px solid whitesmoke;
+}
+.border-right {
+  border-right: 3px solid whitesmoke;
+}
+.border-bottom {
+  border-bottom: 3px solid whitesmoke;
 }
 
 .board-cell.error {

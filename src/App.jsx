@@ -197,9 +197,9 @@ const App = () => {
   const [solving, setSolving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Pilih level");
-  const [solveTime, setSolveTime] = useState(null); 
+  const [solveTime, setSolveTime] = useState(null);
   const [algorithm, setAlgorithm] = useState("DFS");
-   const [originalPuzzle, setOriginalPuzzle] = useState(createEmptyBoard());
+  const [originalPuzzle, setOriginalPuzzle] = useState(createEmptyBoard());
 
   // Opsi level dengan jumlah sel yang dihapus
   const options = {
@@ -210,12 +210,19 @@ const App = () => {
 
   // Reset papan saat level dipilih
   useEffect(() => {
+    // Jika level valid dipilih
     if (selected !== "Pilih level") {
+      // Dapatkan jumlah sel yang akan dihapus
       const removeCount = options[selected];
+      // Hasilkan papan yang sudah terisi
       const solved = generateSolvedBoard();
+      // Hapus sel untuk membuat teka-teki
       const puzzle = removeCells(solved, removeCount);
+      // Atur papan dan simpan teka-teki asli
       setBoard(puzzle);
+      // Simpan teka-teki asli untuk reset nanti
       setOriginalPuzzle(puzzle.map((row) => [...row]));
+      // Reset kesalahan dan waktu penyelesaian
       setErrors(createEmptyBoard());
       setSolveTime(null);
     }
@@ -333,33 +340,40 @@ const App = () => {
       <h1>Sudoku Solver (DFS Algorithm)</h1>
       <label>Pilih algoritma : </label>
       <div className="algorithm-selector">
-          <select
-            value={algorithm} 
-            onChange={(e) => setAlgorithm(e.target.value)}
-            disabled={solving}
-          >
-            <option value="DFS">DFS (Depth First Search)</option>
-            <option value="BFS">BFS (Breadth First Search)</option>
-          </select>
-        </div>
+        <select
+          value={algorithm}
+          onChange={(e) => setAlgorithm(e.target.value)}
+          disabled={solving}
+        >
+          <option value="DFS">DFS (Depth First Search)</option>
+          <option value="BFS">BFS (Breadth First Search)</option>
+        </select>
+      </div>
 
       <div className="board-grid">
         {board.map((row, rIdx) =>
-          row.map((cell, cIdx) => (
-            <input
-              key={`${rIdx}-${cIdx}`}
-              value={cell === 0 ? "" : cell}
-              onChange={(e) => handleChange(rIdx, cIdx, e.target.value)}
-              className={`board-cell ${errors[rIdx][cIdx] ? "error" : ""}`}
-              maxLength={1}
-              readOnly={solving}
-            />
-          ))
+          row.map((cell, cIdx) => {
+            const borders3x3 = `
+        ${rIdx % 3 === 0 ? "border-top" : ""}
+        ${cIdx % 3 === 0 ? "border-left" : ""}
+        ${rIdx === 8 ? "border-bottom" : ""}
+        ${cIdx === 8 ? "border-right" : ""}
+      `;
+            return (
+              <input
+                key={`${rIdx}-${cIdx}`}
+                value={cell === 0 ? "" : cell}
+                onChange={(e) => handleChange(rIdx, cIdx, e.target.value)}
+                className={`board-cell ${errors[rIdx][cIdx] ? "error" : ""} ${borders3x3}`}
+                maxLength={1}
+                readOnly={solving}
+              />
+            );
+          })
         )}
       </div>
 
       <div className="controls">
-        
         <div className="button-container">
           <button onClick={handleSolve} disabled={solving}>
             {solving ? "Solving..." : "Solve"}
