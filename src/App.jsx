@@ -124,7 +124,7 @@ const solveSudokuBFS = async (initialBoard, setBoard, animate = false) => {
         // Animasi: hanya tampilkan perubahan 
         if (animate && setBoard) {
           setBoard(newBoard.map(row => [...row]));
-          await sleep(0.05); // Cepat, biar nggak lambat
+          await sleep(0.05); 
         }
 
         // Masukkan ke queue: papan baru + sel kosong tersisa
