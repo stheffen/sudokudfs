@@ -59,7 +59,7 @@ const solveSudokuDFS = async (bd, setBoard, animate = false) => {
             if (animate && setBoard) {
               // Perbarui papan dengan salinan baru untuk memicu render ulang
               setBoard(bd.map((row) => [...row]));
-              await sleep(0.1);
+              await sleep(0.05);
             }
             // Rekursif untuk menyelesaikan sisa papan, code ini yang membuat algoritma DFS
             if (await solveSudokuDFS(bd, setBoard, animate)) return true;
@@ -78,50 +78,66 @@ const solveSudokuDFS = async (bd, setBoard, animate = false) => {
 // ============================================================================================================
 
 // Fungsi untuk menyelesaikan Sudoku menggunakan BFS Algorithm ================================================
-const solveSudokuBFS = async (board, setBoard, animate = false) => {
-  // Buat antrian (queue) untuk menampung semua kemungkinan papan
-  const queue = [board.map((r) => [...r])];
+const solveSudokuBFS = async (initialBoard, setBoard, animate = false) => {
+  // Cari semua sel kosong sekali di awal
+  const findEmptyCells = (board) => {
+    const cells = [];
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (board[r][c] === 0) cells.push([r, c]);
+      }
+    }
+    return cells;
+  };
+
+  // Queue berisi: { board, emptyCells: [[r,c], ...] }
+  const queue = [{
+    board: initialBoard.map(row => [...row]),
+    emptyCells: findEmptyCells(initialBoard)
+  }];
 
   while (queue.length > 0) {
-    // Ambil papan dari antrian
-    const bd = queue.shift();
-    let found = false;
-    let r = 0,
-      c = 0;
+    const { board, emptyCells } = queue.shift();
 
-    // Cari sel kosong pertama
-    for (r = 0; r < 9; r++) {
-      for (c = 0; c < 9; c++) {
-        if (bd[r][c] === 0) {
-          found = true;
-          break;
-        }
+    // Jika tidak ada sel kosong lagi → SOLUSI DITEMUKAN!
+    if (emptyCells.length === 0) {
+      if (animate && setBoard) {
+        setBoard(board.map(row => [...row]));
+        await sleep(0.05);
+      } else {
+        setBoard(board);
       }
-      if (found) break;
-    }
-
-    // Jika tidak ada sel kosong → berarti sudah selesai
-    if (!found) {
-      setBoard(bd);
       return true;
     }
 
-    // Coba angka 1–9 di sel kosong itu
-    for (let num = 1; num <= 9; num++) {
-      if (isValid(bd, r, c, num)) {
-        const newBoard = bd.map((row) => [...row]);
-        newBoard[r][c] = num;
-        queue.push(newBoard);
+    // Ambil sel kosong PERTAMA yang belum diisi
+    const [r, c] = emptyCells[0];
+    const remainingCells = emptyCells.slice(1); // Sel kosong yang tersisa
 
-        // Animasi pergerakan
+    // Coba semua angka 1–9
+    for (let num = 1; num <= 9; num++) {
+      if (isValid(board, r, c, num)) {
+        // Buat papan baru
+        const newBoard = board.map(row => [...row]);
+        newBoard[r][c] = num;
+
+        // Animasi: hanya tampilkan perubahan 
         if (animate && setBoard) {
-          setBoard(newBoard.map((row) => [...row]));
-          await sleep(0.1);
+          setBoard(newBoard.map(row => [...row]));
+          await sleep(0.05); // Cepat, biar nggak lambat
         }
+
+        // Masukkan ke queue: papan baru + sel kosong tersisa
+        queue.push({
+          board: newBoard,
+          emptyCells: remainingCells
+        });
       }
     }
   }
-  return false; // Jika tidak ada solusi
+
+  // Queue habis → tidak ada solusi
+  return false;
 };
 // =====================================================================================================
 
