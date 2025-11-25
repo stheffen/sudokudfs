@@ -353,7 +353,7 @@ const App = () => {
 
   return (
     <div className="app-container">
-      <h1>Sudoku Solver (DFS Algorithm)</h1>
+      <h1>Sudoku Solver</h1>
       <label>Pilih algoritma : </label>
       <div className="algorithm-selector">
         <select
