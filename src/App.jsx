@@ -171,7 +171,7 @@ const isValid = (board, r, c, num) => {
   return true;
 };
 
-const options = { Easy: 40, Medium: 50, Hard: 60 };
+const options = { Mudah: 40, Sedang: 50, Susah: 60 };
 
 const App = () => {
   const [board, setBoard] = useState(createEmptyBoard());
@@ -466,7 +466,7 @@ const App = () => {
       <audio ref={audioRef} src="backsound.mp3" preload="auto" playsInline />
       <div className="app-container">
         <h1>Tugas Sistem Multimedia</h1>
-        <h2>Sudoku Solver (Optimized DFS)</h2>
+        <h2>Penyelesaian Sudoku (DFS)</h2>
         <div>
           <strong>Waktu pengerjaan manual:</strong>{" "}
           <span>{formatSeconds(manualElapsed)}</span>
@@ -484,12 +484,12 @@ const App = () => {
             <button onClick={() => (manualRunningRef.current ? pauseManualTimer() : startManualTimer())}>
               {manualRunningRef.current ? "Pause Timer" : "Start Timer"}
             </button>
-            <button onClick={stopManualTimer}>Stop & Reset Timer</button>
+            <button onClick={stopManualTimer}>Berhenti dan Mulai waktu dari awal</button>
           </div>
 
           <label style={{ marginLeft: 12 }}>
             <input type="checkbox" checked={fastMode} onChange={(e) => setFastMode(e.target.checked)} disabled={solving} />{" "}
-            Fast mode (no animation)
+            mode cepat 
           </label>
 
 
@@ -515,12 +515,11 @@ const App = () => {
                     if (allowed.includes(e.key)) return;
 
                     if (!/^[1-9]$/.test(e.key)) {
-                      e.preventDefault(); // blok selain angka 1-9
+                      e.preventDefault(); 
                     }
                   }}
                   onPaste={(e) => {
                     const text = e.clipboardData.getData("text") || "";
-                    // hanya izinkan satu digit 1-9, sisanya batalkan paste
                     if (!/^[1-9]$/.test(text.trim())) {
                       e.preventDefault();
                     }
@@ -548,11 +547,11 @@ const App = () => {
             </button>
 
             <button onClick={regenerateSameDifficulty} disabled={solving}>
-              Regenerate (same difficulty)
+              Buat Ulang (same difficulty)
             </button>
 
             <button onClick={resetToOriginal} disabled={solving}>
-              Reset to original
+              Kembalikan ke awal
             </button>
           </div>
         </div>
