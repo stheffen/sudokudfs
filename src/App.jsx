@@ -547,7 +547,7 @@ const App = () => {
             </button>
 
             <button onClick={regenerateSameDifficulty} disabled={solving}>
-              Buat Ulang (same difficulty)
+              Buat Ulang (level yang sama)
             </button>
 
             <button onClick={resetToOriginal} disabled={solving}>
