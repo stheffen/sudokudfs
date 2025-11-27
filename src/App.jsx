@@ -332,20 +332,7 @@ const App = () => {
     }
   };
 
-  const handleToggleMute = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    const next = !audioMuted;
-    try {
-      a.muted = next;
-      setAudioMuted(next);
-      if (!next) {
-        a.play().catch(() => { });
-      }
-    } catch (e) {
-      console.warn("Toggle mute failed", e);
-    }
-  };
+
 
   const handleVolumeChange = (val) => {
     const v = Number(val);
@@ -477,11 +464,9 @@ const App = () => {
   return (
     <>
       <audio ref={audioRef} src="backsound.mp3" preload="auto" playsInline />
-
       <div className="app-container">
         <h1>Tugas Sistem Multimedia</h1>
         <h2>Sudoku Solver (Optimized DFS)</h2>
-
         <div>
           <strong>Waktu pengerjaan manual:</strong>{" "}
           <span>{formatSeconds(manualElapsed)}</span>
@@ -489,7 +474,6 @@ const App = () => {
         </div>
         <div style={{ marginLeft: 12, display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={handleTogglePlayAudio}>{audioPlaying ? "Pause Backsound" : "Play Backsound"}</button>
-          <button onClick={handleToggleMute}>{audioMuted ? "Unmute" : "Mute"}</button>
           <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
             Vol
             <input type="range" min={0} max={1} step={0.01} defaultValue={AUDIO_TARGET_VOLUME} onChange={(e) => handleVolumeChange(e.target.value)} style={{ width: 100 }} />
