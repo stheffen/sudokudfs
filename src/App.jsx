@@ -543,7 +543,7 @@ const App = () => {
         <div className="controls" style={{ marginTop: 12 }}>
           <div className="button-container" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={handleSolve} disabled={solving}>
-              {solving ? "Solving..." : "Solve (otomatis)"}
+              {solving ? "menyelesaikan..." : "Selesaikan"}
             </button>
 
             <button onClick={regenerateSameDifficulty} disabled={solving}>
