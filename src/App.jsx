@@ -473,7 +473,7 @@ const App = () => {
           {manualRunningRef.current ? " (sedang berjalan)" : " (berhenti)"}
         </div>
         <div style={{ marginLeft: 12, display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={handleTogglePlayAudio}>{audioPlaying ? "Pause Backsound" : "Play Backsound"}</button>
+          <button onClick={handleTogglePlayAudio}>{audioPlaying ? "Jeda Audio" : "Mulai Audio"}</button>
           <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
             Vol
             <input type="range" min={0} max={1} step={0.01} defaultValue={AUDIO_TARGET_VOLUME} onChange={(e) => handleVolumeChange(e.target.value)} style={{ width: 100 }} />
@@ -482,7 +482,7 @@ const App = () => {
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={() => (manualRunningRef.current ? pauseManualTimer() : startManualTimer())}>
-              {manualRunningRef.current ? "Pause Timer" : "Start Timer"}
+              {manualRunningRef.current ? "Jeda Waktu" : "Mulai Waktu"}
             </button>
             <button onClick={stopManualTimer}>Berhenti dan Mulai waktu dari awal</button>
           </div>
