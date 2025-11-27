@@ -1,3 +1,4 @@
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -106,7 +107,6 @@ h1 {
 .board-cell.error {
   background-color: #ff0000 !important;
   color: white !important;
-  border: 2px solid whitesmoke !important;
 }
 
 .controls {

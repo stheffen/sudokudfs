@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./app.css";
 
-// Ukuran papan Sudoku
 const SIZE = 9;
 const createEmptyBoard = () =>
   Array(SIZE)
@@ -142,7 +141,6 @@ const generateSolvedBoard = () => {
 const removeCells = (board, removeCount) => {
   const newBoard = board.map((row) => [...row]);
   let removed = 0;
-  // safe removal
   const coords = [];
   for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) coords.push([r, c]);
   while (removed < removeCount && coords.length) {
@@ -186,21 +184,18 @@ const App = () => {
 
   const [fastMode, setFastMode] = useState(false);
 
-  // manual timer refs/state
   const [manualElapsed, setManualElapsed] = useState(0);
   const manualStartRef = useRef(null);
   const manualIntervalRef = useRef(null);
   const manualRunningRef = useRef(false);
   const manualAccumRef = useRef(0);
 
-  // audio refs/state
   const audioRef = useRef(null);
   const [audioPlaying, setAudioPlaying] = useState(false); // whether audio element currently playing
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioUserPaused, setAudioUserPaused] = useState(false); // user explicitly paused audio
   const AUDIO_TARGET_VOLUME = 0.35;
 
-  // initial puzzle on mount
   useEffect(() => {
     const solved = generateSolvedBoard();
     const puzzle = removeCells(solved, options.Easy);
@@ -214,7 +209,6 @@ const App = () => {
     };
   }, []);
 
-  // timer helpers
   const clearManualInterval = () => {
     if (manualIntervalRef.current) {
       clearInterval(manualIntervalRef.current);
@@ -230,7 +224,6 @@ const App = () => {
     setManualElapsed(0);
   };
 
-  // fade-in helper
   const fadeInAudio = (a, target = AUDIO_TARGET_VOLUME, duration = 700) => {
     if (!a) return;
     try {
@@ -248,14 +241,11 @@ const App = () => {
         }
       }, stepTime);
     } catch (e) {
-      // ignore
     }
   };
 
-  // Try to play audio on gesture (Start Timer or first input).
-  // Respect audioUserPaused: if user explicitly paused audio, do not auto-play.
   const playAudioOnGesture = async () => {
-    if (audioUserPaused) return; // user asked it to stay paused
+    if (audioUserPaused) return;
     const a = audioRef.current;
     if (!a) return;
     try {
@@ -267,7 +257,6 @@ const App = () => {
       setAudioMuted(false);
       fadeInAudio(a, AUDIO_TARGET_VOLUME, 700);
     } catch (err) {
-      // if play fails even with gesture, try muted play so it keeps running (but user won't hear)
       try {
         a.muted = true;
         a.volume = 0;
@@ -311,19 +300,16 @@ const App = () => {
     setManualElapsed(0);
   };
 
-  // audio controls (user-invoked)
   const handleTogglePlayAudio = async () => {
     const a = audioRef.current;
     if (!a) return;
     if (audioPlaying) {
-      // user pauses audio intentionally
       try {
         a.pause();
       } catch { }
       setAudioPlaying(false);
       setAudioUserPaused(true);
     } else {
-      // user wants to play audio
       try {
         a.muted = false;
         a.loop = true;
@@ -334,7 +320,6 @@ const App = () => {
         setAudioMuted(false);
         setAudioUserPaused(false);
       } catch (err) {
-        // if play fails, try muted
         try {
           a.muted = true;
           await a.play();
@@ -355,7 +340,6 @@ const App = () => {
       a.muted = next;
       setAudioMuted(next);
       if (!next) {
-        // unmuted -> ensure playing
         a.play().catch(() => { });
       }
     } catch (e) {
@@ -375,12 +359,11 @@ const App = () => {
     }
   };
 
-  // input handler: start timer on first input (gesture) and thus start audio
   const handleChange = (r, c, value) => {
     if (solving) return;
 
     if (!manualRunningRef.current && manualAccumRef.current === 0 && originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
-      startManualTimer(); // gesture -> audio also attempted
+      startManualTimer();
     }
 
     const newBoard = board.map((row) => [...row]);
@@ -493,7 +476,6 @@ const App = () => {
 
   return (
     <>
-      {/* audio element - leading slash to public */}
       <audio ref={audioRef} src="backsound.mp3" preload="auto" playsInline />
 
       <div className="app-container">
@@ -505,7 +487,6 @@ const App = () => {
           <span>{formatSeconds(manualElapsed)}</span>
           {manualRunningRef.current ? " (sedang berjalan)" : " (berhenti)"}
         </div>
-        {/* Audio controls */}
         <div style={{ marginLeft: 12, display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={handleTogglePlayAudio}>{audioPlaying ? "Pause Backsound" : "Play Backsound"}</button>
           <button onClick={handleToggleMute}>{audioMuted ? "Unmute" : "Mute"}</button>
@@ -553,9 +534,19 @@ const App = () => {
                       e.preventDefault(); // blok selain angka 1-9
                     }
                   }}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[1-9]"
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text") || "";
+                    // hanya izinkan satu digit 1-9, sisanya batalkan paste
+                    if (!/^[1-9]$/.test(text.trim())) {
+                      e.preventDefault();
+                    }
+                  }}
+
+                  type="tel"                
+                  inputMode="numeric"       
+                  pattern="[1-9]"           
+                  autoComplete="off"
+                  enterKeyHint="done"       
                   className={`board-cell ${errors[rIdx][cIdx] ? "error" : ""} ${isOriginal ? "original" : ""} ${borders3x3}`}
                   maxLength={1}
                   readOnly={solving || isOriginal}
