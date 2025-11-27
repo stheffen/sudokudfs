@@ -1,29 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./app.css";
 
 // Ukuran papan Sudoku
 const SIZE = 9;
-
-// Helper: buat papan kosong
 const createEmptyBoard = () =>
   Array(SIZE)
     .fill(0)
     .map(() => Array(SIZE).fill(0));
-
-// Hitung index box 0..8
 const getBoxIndex = (r, c) => Math.floor(r / 3) * 3 + Math.floor(c / 3);
 
-// Delay kecil untuk animasi (ms). Untuk percepat: turunkan angka ini (mis. 0-5) atau set ke 0 untuk tanpa animasi.
 const ANIM_DELAY_MS = 10;
-
-// Sleep util
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-/*
-  Optimasi:
-  - rowUsed[r][num], colUsed[c][num], boxUsed[b][num] => O(1) cek validitas
-  - MRV: pilih sel kosong dengan jumlah kandidat paling sedikit
-*/
 const solveSudokuDFSOptimized = async (bd, setBoard, animate = false, delayMs = ANIM_DELAY_MS) => {
   const rowUsed = Array.from({ length: 9 }, () => Array(10).fill(false));
   const colUsed = Array.from({ length: 9 }, () => Array(10).fill(false));
@@ -33,9 +21,8 @@ const solveSudokuDFSOptimized = async (bd, setBoard, animate = false, delayMs = 
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
       const val = bd[r][c];
-      if (val === 0) {
-        empties.push([r, c]);
-      } else {
+      if (val === 0) empties.push([r, c]);
+      else {
         rowUsed[r][val] = true;
         colUsed[c][val] = true;
         boxUsed[getBoxIndex(r, c)][val] = true;
@@ -55,13 +42,9 @@ const solveSudokuDFSOptimized = async (bd, setBoard, animate = false, delayMs = 
       const box = getBoxIndex(r, c);
       const candidates = [];
       for (let num = 1; num <= 9; num++) {
-        if (!rowUsed[r][num] && !colUsed[c][num] && !boxUsed[box][num]) {
-          candidates.push(num);
-        }
+        if (!rowUsed[r][num] && !colUsed[c][num] && !boxUsed[box][num]) candidates.push(num);
       }
-      if (candidates.length === 0) {
-        return false;
-      }
+      if (candidates.length === 0) return false;
       if (candidates.length < bestCount) {
         bestCount = candidates.length;
         bestIdx = i;
@@ -112,7 +95,6 @@ const solveSudokuDFSOptimized = async (bd, setBoard, animate = false, delayMs = 
   return await dfs();
 };
 
-// generate solved board (backtracking simple)
 const generateSolvedBoard = () => {
   const board = createEmptyBoard();
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -160,9 +142,12 @@ const generateSolvedBoard = () => {
 const removeCells = (board, removeCount) => {
   const newBoard = board.map((row) => [...row]);
   let removed = 0;
-  while (removed < removeCount) {
-    const r = Math.floor(Math.random() * 9);
-    const c = Math.floor(Math.random() * 9);
+  // safe removal
+  const coords = [];
+  for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) coords.push([r, c]);
+  while (removed < removeCount && coords.length) {
+    const idx = Math.floor(Math.random() * coords.length);
+    const [r, c] = coords.splice(idx, 1)[0];
     if (newBoard[r][c] !== 0) {
       newBoard[r][c] = 0;
       removed++;
@@ -171,7 +156,6 @@ const removeCells = (board, removeCount) => {
   return newBoard;
 };
 
-// isValid publik (klasik) — hanya dipakai untuk validasi input user
 const isValid = (board, r, c, num) => {
   for (let i = 0; i < 9; i++) {
     if (i !== c && board[r][i] === num) return false;
@@ -189,54 +173,48 @@ const isValid = (board, r, c, num) => {
   return true;
 };
 
+const options = { Easy: 40, Medium: 50, Hard: 60 };
+
 const App = () => {
   const [board, setBoard] = useState(createEmptyBoard());
   const [errors, setErrors] = useState(createEmptyBoard());
   const [solving, setSolving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Pilih level");
-  const [solveTime, setSolveTime] = useState(null); // waktu algoritma DFS
+  const [solveTime, setSolveTime] = useState(null);
   const [originalPuzzle, setOriginalPuzzle] = useState(createEmptyBoard());
 
-  // Fast mode (tanpa animasi)
   const [fastMode, setFastMode] = useState(false);
 
-  // Timer manual (waktu pemain saat mengerjakan)
-  const [manualElapsed, setManualElapsed] = useState(0); // detik
-  const manualStartRef = useRef(null); // timestamp saat start/resume
+  // manual timer refs/state
+  const [manualElapsed, setManualElapsed] = useState(0);
+  const manualStartRef = useRef(null);
   const manualIntervalRef = useRef(null);
-  const manualRunningRef = useRef(false); // true jika timer sedang berjalan
-  const manualAccumRef = useRef(0); // akumulasi detik sebelum pause
+  const manualRunningRef = useRef(false);
+  const manualAccumRef = useRef(0);
 
-  // Opsi level
-  const options = {
-    Easy: 40,
-    Medium: 50,
-    Hard: 60,
-  };
+  // audio refs/state
+  const audioRef = useRef(null);
+  const [audioPlaying, setAudioPlaying] = useState(false); // whether audio element currently playing
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [audioUserPaused, setAudioUserPaused] = useState(false); // user explicitly paused audio
+  const AUDIO_TARGET_VOLUME = 0.35;
 
-  // Saat level dipilih => generate puzzle baru dan reset timer/manual state
+  // initial puzzle on mount
   useEffect(() => {
-    if (selected !== "Pilih level") {
-      const removeCount = options[selected];
-      const solved = generateSolvedBoard();
-      const puzzle = removeCells(solved, removeCount);
-      setBoard(puzzle);
-      setOriginalPuzzle(puzzle.map((row) => [...row]));
-      setErrors(createEmptyBoard());
-      setSolveTime(null);
-
-      resetManualTimerState();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
+    const solved = generateSolvedBoard();
+    const puzzle = removeCells(solved, options.Easy);
+    setBoard(puzzle);
+    setOriginalPuzzle(puzzle.map((row) => [...row]));
+  }, []);
 
   useEffect(() => {
     return () => {
-      clearManualInterval();
+      if (manualIntervalRef.current) clearInterval(manualIntervalRef.current);
     };
   }, []);
 
+  // timer helpers
   const clearManualInterval = () => {
     if (manualIntervalRef.current) {
       clearInterval(manualIntervalRef.current);
@@ -252,19 +230,71 @@ const App = () => {
     setManualElapsed(0);
   };
 
+  // fade-in helper
+  const fadeInAudio = (a, target = AUDIO_TARGET_VOLUME, duration = 700) => {
+    if (!a) return;
+    try {
+      a.volume = 0;
+      const steps = 20;
+      const stepTime = Math.max(10, Math.floor(duration / steps));
+      const inc = target / steps;
+      let step = 0;
+      const h = setInterval(() => {
+        step++;
+        a.volume = Math.min(target, +(a.volume + inc).toFixed(4));
+        if (step >= steps) {
+          clearInterval(h);
+          a.volume = target;
+        }
+      }, stepTime);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Try to play audio on gesture (Start Timer or first input).
+  // Respect audioUserPaused: if user explicitly paused audio, do not auto-play.
+  const playAudioOnGesture = async () => {
+    if (audioUserPaused) return; // user asked it to stay paused
+    const a = audioRef.current;
+    if (!a) return;
+    try {
+      a.muted = false;
+      a.loop = true;
+      a.volume = 0;
+      await a.play();
+      setAudioPlaying(true);
+      setAudioMuted(false);
+      fadeInAudio(a, AUDIO_TARGET_VOLUME, 700);
+    } catch (err) {
+      // if play fails even with gesture, try muted play so it keeps running (but user won't hear)
+      try {
+        a.muted = true;
+        a.volume = 0;
+        await a.play();
+        setAudioPlaying(false);
+        setAudioMuted(true);
+      } catch (e2) {
+        console.warn("Audio play failed even on gesture:", e2);
+      }
+    }
+  };
+
   const startManualTimer = () => {
+    // start or resume timer; also attempt to start audio (gesture)
+    playAudioOnGesture();
+
     if (manualRunningRef.current) return;
     manualRunningRef.current = true;
     manualStartRef.current = Date.now();
     manualIntervalRef.current = setInterval(() => {
       const elapsedMs = Date.now() - manualStartRef.current;
       setManualElapsed(manualAccumRef.current + Math.floor(elapsedMs / 1000));
-    }, 250); // update lebih responsif
+    }, 250);
   };
 
   const pauseManualTimer = () => {
     if (!manualRunningRef.current) return;
-    // commit elapsed to accum, clear interval
     const elapsedMs = Date.now() - manualStartRef.current;
     manualAccumRef.current += Math.floor(elapsedMs / 1000);
     clearManualInterval();
@@ -274,7 +304,6 @@ const App = () => {
   };
 
   const stopManualTimer = () => {
-    // stop and reset accum
     clearManualInterval();
     manualRunningRef.current = false;
     manualStartRef.current = null;
@@ -282,12 +311,76 @@ const App = () => {
     setManualElapsed(0);
   };
 
+  // audio controls (user-invoked)
+  const handleTogglePlayAudio = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (audioPlaying) {
+      // user pauses audio intentionally
+      try {
+        a.pause();
+      } catch { }
+      setAudioPlaying(false);
+      setAudioUserPaused(true);
+    } else {
+      // user wants to play audio
+      try {
+        a.muted = false;
+        a.loop = true;
+        a.volume = 0;
+        await a.play();
+        fadeInAudio(a, AUDIO_TARGET_VOLUME, 500);
+        setAudioPlaying(true);
+        setAudioMuted(false);
+        setAudioUserPaused(false);
+      } catch (err) {
+        // if play fails, try muted
+        try {
+          a.muted = true;
+          await a.play();
+          setAudioPlaying(false);
+          setAudioMuted(true);
+        } catch (e2) {
+          console.warn("Play audio failed:", e2);
+        }
+      }
+    }
+  };
+
+  const handleToggleMute = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    const next = !audioMuted;
+    try {
+      a.muted = next;
+      setAudioMuted(next);
+      if (!next) {
+        // unmuted -> ensure playing
+        a.play().catch(() => { });
+      }
+    } catch (e) {
+      console.warn("Toggle mute failed", e);
+    }
+  };
+
+  const handleVolumeChange = (val) => {
+    const v = Number(val);
+    const a = audioRef.current;
+    if (a) {
+      a.volume = v;
+      if (v > 0) {
+        a.muted = false;
+        setAudioMuted(false);
+      }
+    }
+  };
+
+  // input handler: start timer on first input (gesture) and thus start audio
   const handleChange = (r, c, value) => {
     if (solving) return;
 
-    // mulai timer manual saat input pertama (jika puzzle ada) — hanya jika belum pernah start
     if (!manualRunningRef.current && manualAccumRef.current === 0 && originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
-      startManualTimer();
+      startManualTimer(); // gesture -> audio also attempted
     }
 
     const newBoard = board.map((row) => [...row]);
@@ -301,11 +394,8 @@ const App = () => {
       const val = Number(char);
       if (!Number.isNaN(val) && val >= 1 && val <= 9) {
         newBoard[r][c] = val;
-        if (isValid(newBoard, r, c, val)) {
-          newErrors[r][c] = false;
-        } else {
-          newErrors[r][c] = true;
-        }
+        if (isValid(newBoard, r, c, val)) newErrors[r][c] = false;
+        else newErrors[r][c] = true;
       } else {
         return;
       }
@@ -326,14 +416,12 @@ const App = () => {
   };
 
   const handleSolve = async () => {
-    // jika papan penuh -> anggap selesai manual
     const isFull = board.every((row) => row.every((cell) => cell !== 0));
     if (isFull) {
       if (!isBoardValid(board)) {
         alert("Terdapat angka yang melanggar aturan Sudoku!");
         return;
       }
-      // stop timer manual
       pauseManualTimer();
       alert(`Puzzle sudah terisi. Waktu pengerjaan manual: ${formatSeconds(manualElapsed)}`);
       return;
@@ -347,11 +435,8 @@ const App = () => {
     setSolving(true);
     setSolveTime(null);
 
-    // salin board untuk solver (mutasi bd di solver)
     const newBoard = board.map((row) => [...row]);
-
     const start = performance.now();
-    // jika fastMode: animate=false dan delay 0 (paling cepat)
     const animate = !fastMode;
     const delay = fastMode ? 0 : ANIM_DELAY_MS;
     const solved = await solveSudokuDFSOptimized(newBoard, setBoard, animate, delay);
@@ -361,7 +446,6 @@ const App = () => {
 
     if (solved) {
       setBoard(newBoard.map((row) => [...row]));
-      // stop/pause manual timer ketika solver menyelesaikan
       pauseManualTimer();
     } else {
       alert("Tidak ada solusi yang valid!");
@@ -370,7 +454,6 @@ const App = () => {
     setSolving(false);
   };
 
-  // ===== Tombol: New Puzzle (buat puzzle baru, set original), Regenerate (same difficulty), Reset to original =====
   const createNewPuzzle = (level = null) => {
     const lvl = level || (selected === "Pilih level" ? "Easy" : selected);
     const removeCount = options[lvl] || 40;
@@ -389,7 +472,6 @@ const App = () => {
   };
 
   const resetToOriginal = () => {
-    // jika originalPuzzle kosong, buat new puzzle default
     if (!originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
       createNewPuzzle(selected === "Pilih level" ? "Easy" : selected);
       return;
@@ -398,35 +480,41 @@ const App = () => {
     setErrors(createEmptyBoard());
     setSolveTime(null);
     stopManualTimer();
-    // tetap simpan originalPuzzle; timer reset tetapi manualAccum juga direset
     manualAccumRef.current = 0;
     setManualElapsed(0);
   };
-  // ===============================================================
 
   const formatSeconds = (secs) => {
     const s = Number(secs || 0);
-    const minutes = Math.floor(s / 60)
-      .toString()
-      .padStart(2, "0");
+    const minutes = Math.floor(s / 60).toString().padStart(2, "0");
     const seconds = (s % 60).toString().padStart(2, "0");
     return `${minutes}:${seconds}`;
   };
 
   return (
     <>
+      {/* audio element - leading slash to public */}
+      <audio ref={audioRef} src="backsound.mp3" preload="auto" playsInline />
 
       <div className="app-container">
         <h1>Tugas Sistem Multimedia</h1>
-        <h1>Sudoku Solver (Optimized DFS)</h1>
+        <h2>Sudoku Solver (Optimized DFS)</h2>
 
         <div>
           <strong>Waktu pengerjaan manual:</strong>{" "}
           <span>{formatSeconds(manualElapsed)}</span>
           {manualRunningRef.current ? " (sedang berjalan)" : " (berhenti)"}
         </div>
+        {/* Audio controls */}
+        <div style={{ marginLeft: 12, display: "flex", gap: 8, alignItems: "center" }}>
+          <button onClick={handleTogglePlayAudio}>{audioPlaying ? "Pause Backsound" : "Play Backsound"}</button>
+          <button onClick={handleToggleMute}>{audioMuted ? "Unmute" : "Mute"}</button>
+          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            Vol
+            <input type="range" min={0} max={1} step={0.01} defaultValue={AUDIO_TARGET_VOLUME} onChange={(e) => handleVolumeChange(e.target.value)} style={{ width: 100 }} />
+          </label>
+        </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
-
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={() => (manualRunningRef.current ? pauseManualTimer() : startManualTimer())}>
               {manualRunningRef.current ? "Pause Timer" : "Start Timer"}
@@ -435,14 +523,11 @@ const App = () => {
           </div>
 
           <label style={{ marginLeft: 12 }}>
-            <input
-              type="checkbox"
-              checked={fastMode}
-              onChange={(e) => setFastMode(e.target.checked)}
-              disabled={solving}
-            />{" "}
+            <input type="checkbox" checked={fastMode} onChange={(e) => setFastMode(e.target.checked)} disabled={solving} />{" "}
             Fast mode (no animation)
           </label>
+
+
         </div>
 
         <div className="board-grid">
@@ -454,8 +539,7 @@ const App = () => {
         ${rIdx === 8 ? "border-bottom" : ""}
         ${cIdx === 8 ? "border-right" : ""}
       `;
-              const isOriginal =
-                originalPuzzle[rIdx] && originalPuzzle[rIdx][cIdx] !== 0;
+              const isOriginal = originalPuzzle[rIdx] && originalPuzzle[rIdx][cIdx] !== 0;
               return (
                 <input
                   key={`${rIdx}-${cIdx}`}
@@ -485,8 +569,8 @@ const App = () => {
               Reset to original
             </button>
           </div>
-
         </div>
+
         <div className="dropdown" style={{ marginTop: 8 }}>
           <button onClick={() => setOpen(!open)}>{selected} </button>
           {open && (
@@ -519,17 +603,19 @@ const App = () => {
           Pilih level terlebih dahulu untuk memulai permainan.
         </p>
       </div>
+
       <div className="app-container" style={{ marginTop: 20 }}>
         <h2>Video Tutorial Bermain Sudoku</h2>
         <iframe
           title="youtube"
           src="https://www.youtube.com/embed/1oTDTHmzj_Q"
           width="100%"
-          height="650"
+          height="450"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         ></iframe>
       </div>
+
       <div className="created-container">
         <h1>Dibuat Oleh</h1>
         <div className="created">

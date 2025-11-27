@@ -87,7 +87,7 @@ h1 {
   font-size: clamp(0.8rem, 2vw, 1.2rem);
   background-color: rgb(19, 18, 18);
   border: 1px solid gray ;
-  color: rgba(255, 114, 187, 0.8);
+  color: white;
 }
 
 .border-top {
@@ -137,7 +137,12 @@ button {
 
 button:hover {
   box-shadow: 0 1px 2px rgba(255, 114, 187, 0.8);
-  background-color: rgba(0, 0, 0, 0.834);
+  background-color: rgba(255, 114, 187, 0.8);
+  color: white;
+}
+
+input[type="range"]{
+  accent-color: rgba(161, 12, 89, 0.8);
 }
 
 p {
