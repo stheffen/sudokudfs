@@ -4,13 +4,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100%;
   background-color: black;
 }
 
 h1 {
   font-size: 1.8rem;
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
   text-align: center;
 }
 
@@ -18,14 +18,53 @@ h1 {
   margin-top: -20px;
   padding: 20px;
   border-radius: 20px;
-  box-shadow: 0 1px 10px rgba(173, 255, 47, 0.8);
+  box-shadow: 0 1px 10px rgba(226, 55, 143, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   background-color: black;
-  height: 650px;
+  color: white;
+  height: 750px;
+  margin: 30px 0 30px 0;
+}
+.created-container {
+  border-radius: 20px;
+  box-shadow: 0 1px 10px rgba(226, 55, 143, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: black;
+  
+  height: 200px;
+  margin: 30px 0 30px 0;
+}
+.created-container h1 {
+  color: white;
+}
+.created {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.video-container  {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.video-container label{
+  color: white;
+}
+.video {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 10px;
 }
 
 .board-grid {
@@ -37,7 +76,7 @@ h1 {
   width: fit-content;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 1px 10px greenyellow ;
+  box-shadow: 0 1px 10px rgba(255, 114, 187, 0.8) ;
 }
 
 .board-cell {
@@ -48,7 +87,7 @@ h1 {
   font-size: clamp(0.8rem, 2vw, 1.2rem);
   background-color: rgb(19, 18, 18);
   border: 1px solid gray ;
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
 }
 
 .border-top {
@@ -85,19 +124,19 @@ h1 {
 }
 
 button {
-  box-shadow: 0 1px 2px rgba(47, 255, 220, 0.4);
+  box-shadow: 0 1px 2px rgba(190, 10, 103, 0.8);
   padding: 0.7rem 1.5rem;
   font-size: 1rem;
   border: none;
   border-radius: 0.25rem;
   cursor: pointer;
   background-color: rgba(0, 0, 0, 0.847);
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
   transition: background-color 0.3s ease-in-out;
 }
 
 button:hover {
-  box-shadow: 0 1px 2px greenyellow;
+  box-shadow: 0 1px 2px rgba(255, 114, 187, 0.8);
   background-color: rgba(0, 0, 0, 0.834);
 }
 
@@ -106,13 +145,14 @@ p {
 }
 
 .solve-time {
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
   margin-top: 2px;
   margin-bottom: -18px;
 }
 
 .dropdown {
   position: relative;
+  
 }
 
 .dropdown-menu {
@@ -133,7 +173,7 @@ p {
 
 .dropdown-item {
   padding: 8px 4px;
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
   cursor: pointer;
 }
 
@@ -143,7 +183,7 @@ p {
 
 label{
   font-size: 1rem;
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
 }
 
 .algorithm-selector{
@@ -154,9 +194,9 @@ select{
   cursor: pointer;
   padding: 0.5rem 0.6rem;
   outline: none;
-  color: greenyellow;
+  color: rgba(255, 114, 187, 0.8);
   background-color: rgba(0, 0, 0, 0.834);
-  box-shadow: 0 1px 2px greenyellow;
+  box-shadow: 0 1px 2px rgba(255, 114, 187, 0.8);
 }
 
 /* HP */

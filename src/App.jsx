@@ -1,210 +1,192 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./app.css";
 
 // Ukuran papan Sudoku
 const SIZE = 9;
 
-// Fungsi untuk membuat papan Sudoku kosong
+// Helper: buat papan kosong
 const createEmptyBoard = () =>
-  // Buat array 9x9 diisi dengan nol
   Array(SIZE)
     .fill(0)
     .map(() => Array(SIZE).fill(0));
 
-// Fungsi untuk memeriksa apakah penempatan angka valid di papan tiap baris dan kolom
-const isValid = (board, r, c, num) => {
-  // Periksa semua baris dan kolom
-  for (let i = 0; i < 9; i++) {
-    // Periksa baris dan kolom jika ada angka yang sama makan kembalikan false
-    if (i !== c && board[r][i] === num) return false;
-    if (i !== r && board[i][c] === num) return false;
-  }
+// Hitung index box 0..8
+const getBoxIndex = (r, c) => Math.floor(r / 3) * 3 + Math.floor(c / 3);
 
-  // Periksa subgrid 3x3 untuk memastikan angka tidak ada yang sama
-  const startRow = Math.floor(r / 3) * 3;
-  const startCol = Math.floor(c / 3) * 3;
-  // Iterasi dalam subgrid untuk menelusuri 9 sel dalam subgrid 3×3
-  for (let i = 0; i < 3; i++) {
-    // Iterasi dalam subgrid untuk menelusuri 9 sel dalam subgrid 3×3
-    for (let j = 0; j < 3; j++) {
-      // Menghitung posisi sebenarnya di papan Sudoku, Untuk memeriksa semua 9 sel di blok 3x3.
-      const rr = startRow + i;
-      const cc = startCol + j;
-      // memastikan tidak memeriksa dirinya sendiri dan mengecek apakah angka num sudah ada di salah satu sel subgrid
-      // Jika ketemu langsung return false karena angka tidak boleh diulang di subgrid
-      if ((rr !== r || cc !== c) && board[rr][cc] === num) return false;
-    }
-  }
-  // Jika tidak ada konflik, penempatan valid
-  return true;
-};
+// Delay kecil untuk animasi (ms). Untuk percepat: turunkan angka ini (mis. 0-5) atau set ke 0 untuk tanpa animasi.
+const ANIM_DELAY_MS = 10;
 
-// Fungsi untuk menunda eksekusi (untuk animasi)
+// Sleep util
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-// Fungsi untuk menyelesaikan Sudoku menggunakan DFS Algorithm =================================================
-const solveSudokuDFS = async (bd, setBoard, animate = false) => {
-  // Cari sel kosong
+/*
+  Optimasi:
+  - rowUsed[r][num], colUsed[c][num], boxUsed[b][num] => O(1) cek validitas
+  - MRV: pilih sel kosong dengan jumlah kandidat paling sedikit
+*/
+const solveSudokuDFSOptimized = async (bd, setBoard, animate = false, delayMs = ANIM_DELAY_MS) => {
+  const rowUsed = Array.from({ length: 9 }, () => Array(10).fill(false));
+  const colUsed = Array.from({ length: 9 }, () => Array(10).fill(false));
+  const boxUsed = Array.from({ length: 9 }, () => Array(10).fill(false));
+  const empties = [];
+
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
-      // Mencari tempat kosong di papan sudoku
-      if (bd[r][c] === 0) {
-        // Coba angka 1-9
-        for (let num = 1; num <= 9; num++) {
-          // Periksa apakah penempatan valid
-          if (isValid(bd, r, c, num)) {
-            // Tempatkan angka
-            bd[r][c] = num;
-            // Jika animasi diaktifkan, perbarui papan dan tunggu sebentar
-            if (animate && setBoard) {
-              // Perbarui papan dengan salinan baru untuk memicu render ulang
-              setBoard(bd.map((row) => [...row]));
-              await sleep(0.05);
-            }
-            // Rekursif untuk menyelesaikan sisa papan, code ini yang membuat algoritma DFS
-            if (await solveSudokuDFS(bd, setBoard, animate)) return true;
-            // Jika tidak berhasil, hapus angka
-            bd[r][c] = 0;
-          }
+      const val = bd[r][c];
+      if (val === 0) {
+        empties.push([r, c]);
+      } else {
+        rowUsed[r][val] = true;
+        colUsed[c][val] = true;
+        boxUsed[getBoxIndex(r, c)][val] = true;
+      }
+    }
+  }
+
+  const dfs = async () => {
+    if (empties.length === 0) return true;
+
+    let bestIdx = -1;
+    let bestCount = 10;
+    let bestCandidates = null;
+
+    for (let i = 0; i < empties.length; i++) {
+      const [r, c] = empties[i];
+      const box = getBoxIndex(r, c);
+      const candidates = [];
+      for (let num = 1; num <= 9; num++) {
+        if (!rowUsed[r][num] && !colUsed[c][num] && !boxUsed[box][num]) {
+          candidates.push(num);
         }
-        // Jika tidak ada angka yang valid, kembalikan nilai false untuk coba angka 1-9 di sel sebelumnya
+      }
+      if (candidates.length === 0) {
         return false;
       }
-    }
-  }
-  // Jika seluruh papan terisi, kembalikan true
-  return true;
-};
-// ============================================================================================================
-
-// Fungsi untuk menyelesaikan Sudoku menggunakan BFS Algorithm ================================================
-const solveSudokuBFS = async (initialBoard, setBoard, animate = false) => {
-  // Cari semua sel kosong sekali di awal
-  const findEmptyCells = (board) => {
-    const cells = [];
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (board[r][c] === 0) cells.push([r, c]);
+      if (candidates.length < bestCount) {
+        bestCount = candidates.length;
+        bestIdx = i;
+        bestCandidates = candidates;
+        if (bestCount === 1) break;
       }
     }
-    return cells;
+
+    const [r, c] = empties[bestIdx];
+    const last = empties.pop();
+    if (bestIdx < empties.length) empties[bestIdx] = last;
+    const box = getBoxIndex(r, c);
+
+    for (const num of bestCandidates) {
+      bd[r][c] = num;
+      rowUsed[r][num] = true;
+      colUsed[c][num] = true;
+      boxUsed[box][num] = true;
+
+      if (animate && setBoard) {
+        setBoard(bd.map((row) => [...row]));
+        if (delayMs > 0) await sleep(delayMs);
+      }
+
+      if (await dfs()) return true;
+
+      bd[r][c] = 0;
+      rowUsed[r][num] = false;
+      colUsed[c][num] = false;
+      boxUsed[box][num] = false;
+
+      if (animate && setBoard) {
+        setBoard(bd.map((row) => [...row]));
+        if (delayMs > 0) await sleep(delayMs);
+      }
+    }
+
+    empties.push([r, c]);
+    if (bestIdx < empties.length - 1) {
+      const tmp = empties[empties.length - 1];
+      empties[empties.length - 1] = empties[bestIdx];
+      empties[bestIdx] = tmp;
+    }
+
+    return false;
   };
 
-  // Queue berisi: { board, emptyCells: [[r,c], ...] }
-  const queue = [{
-    board: initialBoard.map(row => [...row]),
-    emptyCells: findEmptyCells(initialBoard)
-  }];
-
-  while (queue.length > 0) {
-    const { board, emptyCells } = queue.shift();
-
-    // Jika tidak ada sel kosong lagi → SOLUSI DITEMUKAN!
-    if (emptyCells.length === 0) {
-      if (animate && setBoard) {
-        setBoard(board.map(row => [...row]));
-        await sleep(0.05);
-      } else {
-        setBoard(board);
-      }
-      return true;
-    }
-
-    // Ambil sel kosong PERTAMA yang belum diisi
-    const [r, c] = emptyCells[0];
-    const remainingCells = emptyCells.slice(1); // Sel kosong yang tersisa
-
-    // Coba semua angka 1–9
-    for (let num = 1; num <= 9; num++) {
-      if (isValid(board, r, c, num)) {
-        // Buat papan baru
-        const newBoard = board.map(row => [...row]);
-        newBoard[r][c] = num;
-
-        // Animasi: hanya tampilkan perubahan 
-        if (animate && setBoard) {
-          setBoard(newBoard.map(row => [...row]));
-          await sleep(0.05); 
-        }
-
-        // Masukkan ke queue: papan baru + sel kosong tersisa
-        queue.push({
-          board: newBoard,
-          emptyCells: remainingCells
-        });
-      }
-    }
-  }
-
-  // Queue habis → tidak ada solusi
-  return false;
+  return await dfs();
 };
-// =====================================================================================================
 
-// Fungsi untuk menghasilkan papan Sudoku yang sudah terisi
+// generate solved board (backtracking simple)
 const generateSolvedBoard = () => {
-  // Buat papan kosong
   const board = createEmptyBoard();
-  // Daftar angka 1-9
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-  // Fungsi rekursif untuk mengisi papan
+  const isValidSlow = (bd, r, c, num) => {
+    for (let i = 0; i < 9; i++) {
+      if (i !== c && bd[r][i] === num) return false;
+      if (i !== r && bd[i][c] === num) return false;
+    }
+    const sr = Math.floor(r / 3) * 3;
+    const sc = Math.floor(c / 3) * 3;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        const rr = sr + i;
+        const cc = sc + j;
+        if ((rr !== r || cc !== c) && bd[rr][cc] === num) return false;
+      }
+    }
+    return true;
+  };
+
   const fillBoard = (bd) => {
-    // Iterasi baris
     for (let r = 0; r < 9; r++) {
-      // Iterasi kolom
       for (let c = 0; c < 9; c++) {
-        // Jika sel kosong ditemukan
         if (bd[r][c] === 0) {
-          // Acak urutan angka
           const shuffled = [...numbers].sort(() => Math.random() - 0.5);
-          // Coba setiap angka dalam urutan acak
           for (let num of shuffled) {
-            // Periksa apakah penempatan valid
-            if (isValid(bd, r, c, num)) {
-              // Tempatkan angka
+            if (isValidSlow(bd, r, c, num)) {
               bd[r][c] = num;
-              // Rekursif untuk mengisi sisa papan
               if (fillBoard(bd)) return true;
-              // Jika tidak berhasil, hapus angka (backtrack)
               bd[r][c] = 0;
             }
           }
-          // Jika tidak ada angka yang valid, kembalikan false
           return false;
         }
       }
     }
-    // Jika seluruh papan terisi, kembalikan true
     return true;
   };
-  // Mulai mengisi papan
+
   fillBoard(board);
-  // Kembalikan papan yang sudah terisi
   return board;
 };
 
-// Fungsi untuk menghapus sel dari papan untuk membuat teka-teki
 const removeCells = (board, removeCount) => {
-  // Salin papan untuk dimodifikasi
   const newBoard = board.map((row) => [...row]);
-  // Hitung berapa banyak sel yang telah dihapus
   let removed = 0;
-
-  // Hapus sel secara acak hingga mencapai jumlah yang diinginkan
   while (removed < removeCount) {
-    // Pilih baris dan kolom acak
     const r = Math.floor(Math.random() * 9);
     const c = Math.floor(Math.random() * 9);
-    // Jika sel belum dihapus, hapus dan tingkatkan penghitung
     if (newBoard[r][c] !== 0) {
       newBoard[r][c] = 0;
-
       removed++;
     }
   }
-  // Kembalikan papan dengan sel yang dihapus
   return newBoard;
+};
+
+// isValid publik (klasik) — hanya dipakai untuk validasi input user
+const isValid = (board, r, c, num) => {
+  for (let i = 0; i < 9; i++) {
+    if (i !== c && board[r][i] === num) return false;
+    if (i !== r && board[i][c] === num) return false;
+  }
+  const startRow = Math.floor(r / 3) * 3;
+  const startCol = Math.floor(c / 3) * 3;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      const rr = startRow + i;
+      const cc = startCol + j;
+      if ((rr !== r || cc !== c) && board[rr][cc] === num) return false;
+    }
+  }
+  return true;
 };
 
 const App = () => {
@@ -213,91 +195,150 @@ const App = () => {
   const [solving, setSolving] = useState(false);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Pilih level");
-  const [solveTime, setSolveTime] = useState(null);
-  const [algorithm, setAlgorithm] = useState("DFS");
+  const [solveTime, setSolveTime] = useState(null); // waktu algoritma DFS
   const [originalPuzzle, setOriginalPuzzle] = useState(createEmptyBoard());
 
-  // Opsi level dengan jumlah sel yang dihapus
+  // Fast mode (tanpa animasi)
+  const [fastMode, setFastMode] = useState(false);
+
+  // Timer manual (waktu pemain saat mengerjakan)
+  const [manualElapsed, setManualElapsed] = useState(0); // detik
+  const manualStartRef = useRef(null); // timestamp saat start/resume
+  const manualIntervalRef = useRef(null);
+  const manualRunningRef = useRef(false); // true jika timer sedang berjalan
+  const manualAccumRef = useRef(0); // akumulasi detik sebelum pause
+
+  // Opsi level
   const options = {
     Easy: 40,
     Medium: 50,
     Hard: 60,
   };
 
-  // Reset papan saat level dipilih
+  // Saat level dipilih => generate puzzle baru dan reset timer/manual state
   useEffect(() => {
-    // Jika level valid dipilih
     if (selected !== "Pilih level") {
-      // Dapatkan jumlah sel yang akan dihapus
       const removeCount = options[selected];
-      // Hasilkan papan yang sudah terisi
       const solved = generateSolvedBoard();
-      // Hapus sel untuk membuat teka-teki
       const puzzle = removeCells(solved, removeCount);
-      // Atur papan dan simpan teka-teki asli
       setBoard(puzzle);
-      // Simpan teka-teki asli untuk reset nanti
       setOriginalPuzzle(puzzle.map((row) => [...row]));
-      // Reset kesalahan dan waktu penyelesaian
       setErrors(createEmptyBoard());
       setSolveTime(null);
+
+      resetManualTimerState();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
-  // Tangani perubahan input sel
+  useEffect(() => {
+    return () => {
+      clearManualInterval();
+    };
+  }, []);
+
+  const clearManualInterval = () => {
+    if (manualIntervalRef.current) {
+      clearInterval(manualIntervalRef.current);
+      manualIntervalRef.current = null;
+    }
+  };
+
+  const resetManualTimerState = () => {
+    clearManualInterval();
+    manualRunningRef.current = false;
+    manualStartRef.current = null;
+    manualAccumRef.current = 0;
+    setManualElapsed(0);
+  };
+
+  const startManualTimer = () => {
+    if (manualRunningRef.current) return;
+    manualRunningRef.current = true;
+    manualStartRef.current = Date.now();
+    manualIntervalRef.current = setInterval(() => {
+      const elapsedMs = Date.now() - manualStartRef.current;
+      setManualElapsed(manualAccumRef.current + Math.floor(elapsedMs / 1000));
+    }, 250); // update lebih responsif
+  };
+
+  const pauseManualTimer = () => {
+    if (!manualRunningRef.current) return;
+    // commit elapsed to accum, clear interval
+    const elapsedMs = Date.now() - manualStartRef.current;
+    manualAccumRef.current += Math.floor(elapsedMs / 1000);
+    clearManualInterval();
+    manualRunningRef.current = false;
+    manualStartRef.current = null;
+    setManualElapsed(manualAccumRef.current);
+  };
+
+  const stopManualTimer = () => {
+    // stop and reset accum
+    clearManualInterval();
+    manualRunningRef.current = false;
+    manualStartRef.current = null;
+    manualAccumRef.current = 0;
+    setManualElapsed(0);
+  };
+
   const handleChange = (r, c, value) => {
-    // Konversi nilai input ke angka
-    const val = Number(value);
-    // Salin papan dan kesalahan saat ini
+    if (solving) return;
+
+    // mulai timer manual saat input pertama (jika puzzle ada) — hanya jika belum pernah start
+    if (!manualRunningRef.current && manualAccumRef.current === 0 && originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
+      startManualTimer();
+    }
+
     const newBoard = board.map((row) => [...row]);
-    // Salin status kesalahan saat ini
     const newErrors = errors.map((row) => [...row]);
 
-    // Validasi input
     if (value === "") {
-      // Kosongkan sel
       newBoard[r][c] = 0;
-      // Hapus kesalahan
       newErrors[r][c] = false;
-      // Jika input bukan angka 1-9, abaikan
-    } else if (val >= 1 && val <= 9) {
-      // Periksa validitas penempatan
-      if (isValid(newBoard, r, c, val)) {
-        // Perbarui papan dan hapus kesalahan
+    } else {
+      const char = value.slice(-1);
+      const val = Number(char);
+      if (!Number.isNaN(val) && val >= 1 && val <= 9) {
         newBoard[r][c] = val;
-        newErrors[r][c] = false;
-        // Jika melanggar aturan, tandai sebagai kesalahan
+        if (isValid(newBoard, r, c, val)) {
+          newErrors[r][c] = false;
+        } else {
+          newErrors[r][c] = true;
+        }
       } else {
-        // Perbarui papan dan tandai kesalahan
-        newBoard[r][c] = val;
-        newErrors[r][c] = true;
+        return;
       }
     }
 
-    // Perbarui state papan dan kesalahan
     setBoard(newBoard);
     setErrors(newErrors);
   };
 
-  // Fungsi untuk memeriksa apakah papan valid sebelum menyelesaikan
   const isBoardValid = (bd) => {
-    // Periksa setiap sel di papan
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
-        // Dapatkan nilai sel
         const val = bd[r][c];
-        // Jika sel tidak kosong dan penempatan tidak valid, kembalikan false
-        if (val !== 0 && !isValid(bd, r, c, val)) {
-          // Jika ada pelanggaran aturan, kembalikan false
-          return false;
-        }
+        if (val !== 0 && !isValid(bd, r, c, val)) return false;
       }
     }
-    // Jika tidak ada pelanggaran, kembalikan true
     return true;
   };
 
   const handleSolve = async () => {
+    // jika papan penuh -> anggap selesai manual
+    const isFull = board.every((row) => row.every((cell) => cell !== 0));
+    if (isFull) {
+      if (!isBoardValid(board)) {
+        alert("Terdapat angka yang melanggar aturan Sudoku!");
+        return;
+      }
+      // stop timer manual
+      pauseManualTimer();
+      alert(`Puzzle sudah terisi. Waktu pengerjaan manual: ${formatSeconds(manualElapsed)}`);
+      return;
+    }
+
     if (!isBoardValid(board)) {
       alert("Terdapat angka yang melanggar aturan Sudoku!");
       return;
@@ -306,100 +347,147 @@ const App = () => {
     setSolving(true);
     setSolveTime(null);
 
-    // Salin papan untuk diselesaikan
+    // salin board untuk solver (mutasi bd di solver)
     const newBoard = board.map((row) => [...row]);
 
-    //Mulai pengukuran waktu
     const start = performance.now();
-
-    // Panggil fungsi penyelesaian dengan animasi
-    let solved = false;
-    if (algorithm === "DFS") {
-      solved = await solveSudokuDFS(newBoard, setBoard, true);
-    } else {
-      solved = await solveSudokuBFS(newBoard, setBoard, true);
-    }
-
-    //Akhiri pengukuran waktu
+    // jika fastMode: animate=false dan delay 0 (paling cepat)
+    const animate = !fastMode;
+    const delay = fastMode ? 0 : ANIM_DELAY_MS;
+    const solved = await solveSudokuDFSOptimized(newBoard, setBoard, animate, delay);
     const end = performance.now();
     const duration = ((end - start) / 1000).toFixed(3);
     setSolveTime(duration);
 
-    // Perbarui papan jika berhasil diselesaikan
-    if (solved && algorithm === "DFS") {
-      setBoard(newBoard); // hanya DFS yang perlu ini
-    } else if (!solved) {
+    if (solved) {
+      setBoard(newBoard.map((row) => [...row]));
+      // stop/pause manual timer ketika solver menyelesaikan
+      pauseManualTimer();
+    } else {
       alert("Tidak ada solusi yang valid!");
     }
+
     setSolving(false);
   };
 
-  // Fungsi untuk mengatur ulang papan berdasarkan level yang dipilih
-  const handleReset = () => {
-    // Jika sudah punya puzzle awal, cukup kembalikan ke sana
-    if (originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
-      setBoard(originalPuzzle.map((row) => [...row]));
-    } else {
-      // Kalau belum ada (pertama kali pilih level)
-      const removeCount = options[selected];
-      const solved = generateSolvedBoard();
-      const puzzle = removeCells(solved, removeCount);
-      setBoard(puzzle);
-      setOriginalPuzzle(puzzle.map((row) => [...row]));
-    }
+  // ===== Tombol: New Puzzle (buat puzzle baru, set original), Regenerate (same difficulty), Reset to original =====
+  const createNewPuzzle = (level = null) => {
+    const lvl = level || (selected === "Pilih level" ? "Easy" : selected);
+    const removeCount = options[lvl] || 40;
+    const solved = generateSolvedBoard();
+    const puzzle = removeCells(solved, removeCount);
+    setBoard(puzzle);
+    setOriginalPuzzle(puzzle.map((row) => [...row]));
     setErrors(createEmptyBoard());
     setSolveTime(null);
+    resetManualTimerState();
+  };
+
+  const regenerateSameDifficulty = () => {
+    const lvl = selected === "Pilih level" ? "Easy" : selected;
+    createNewPuzzle(lvl);
+  };
+
+  const resetToOriginal = () => {
+    // jika originalPuzzle kosong, buat new puzzle default
+    if (!originalPuzzle.some((row) => row.some((cell) => cell !== 0))) {
+      createNewPuzzle(selected === "Pilih level" ? "Easy" : selected);
+      return;
+    }
+    setBoard(originalPuzzle.map((row) => [...row]));
+    setErrors(createEmptyBoard());
+    setSolveTime(null);
+    stopManualTimer();
+    // tetap simpan originalPuzzle; timer reset tetapi manualAccum juga direset
+    manualAccumRef.current = 0;
+    setManualElapsed(0);
+  };
+  // ===============================================================
+
+  const formatSeconds = (secs) => {
+    const s = Number(secs || 0);
+    const minutes = Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (s % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
   };
 
   return (
-    <div className="app-container">
-      <h1>Sudoku Solver</h1>
-      <label>Pilih algoritma : </label>
-      <div className="algorithm-selector">
-        <select
-          value={algorithm}
-          onChange={(e) => setAlgorithm(e.target.value)}
-          disabled={solving}
-        >
-          <option value="DFS">DFS (Depth First Search)</option>
-          <option value="BFS">BFS (Breadth First Search)</option>
-        </select>
-      </div>
+    <>
 
-      <div className="board-grid">
-        {board.map((row, rIdx) =>
-          row.map((cell, cIdx) => {
-            const borders3x3 = `
+      <div className="app-container">
+        <h1>Tugas Sistem Multimedia</h1>
+        <h1>Sudoku Solver (Optimized DFS)</h1>
+
+        <div>
+          <strong>Waktu pengerjaan manual:</strong>{" "}
+          <span>{formatSeconds(manualElapsed)}</span>
+          {manualRunningRef.current ? " (sedang berjalan)" : " (berhenti)"}
+        </div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={() => (manualRunningRef.current ? pauseManualTimer() : startManualTimer())}>
+              {manualRunningRef.current ? "Pause Timer" : "Start Timer"}
+            </button>
+            <button onClick={stopManualTimer}>Stop & Reset Timer</button>
+          </div>
+
+          <label style={{ marginLeft: 12 }}>
+            <input
+              type="checkbox"
+              checked={fastMode}
+              onChange={(e) => setFastMode(e.target.checked)}
+              disabled={solving}
+            />{" "}
+            Fast mode (no animation)
+          </label>
+        </div>
+
+        <div className="board-grid">
+          {board.map((row, rIdx) =>
+            row.map((cell, cIdx) => {
+              const borders3x3 = `
         ${rIdx % 3 === 0 ? "border-top" : ""}
         ${cIdx % 3 === 0 ? "border-left" : ""}
         ${rIdx === 8 ? "border-bottom" : ""}
         ${cIdx === 8 ? "border-right" : ""}
       `;
-            return (
-              <input
-                key={`${rIdx}-${cIdx}`}
-                value={cell === 0 ? "" : cell}
-                onChange={(e) => handleChange(rIdx, cIdx, e.target.value)}
-                className={`board-cell ${errors[rIdx][cIdx] ? "error" : ""} ${borders3x3}`}
-                maxLength={1}
-                readOnly={solving}
-              />
-            );
-          })
-        )}
-      </div>
-
-      <div className="controls">
-        <div className="button-container">
-          <button onClick={handleSolve} disabled={solving}>
-            {solving ? "Solving..." : "Solve"}
-          </button>
-          <button onClick={handleReset} disabled={solving}>
-            Reset
-          </button>
+              const isOriginal =
+                originalPuzzle[rIdx] && originalPuzzle[rIdx][cIdx] !== 0;
+              return (
+                <input
+                  key={`${rIdx}-${cIdx}`}
+                  value={cell === 0 ? "" : cell}
+                  onChange={(e) => handleChange(rIdx, cIdx, e.target.value)}
+                  className={`board-cell ${errors[rIdx][cIdx] ? "error" : ""} ${isOriginal ? "original" : ""} ${borders3x3}`}
+                  maxLength={1}
+                  readOnly={solving || isOriginal}
+                  title={isOriginal ? "Original (not editable)" : undefined}
+                />
+              );
+            })
+          )}
         </div>
 
-        <div className="dropdown">
+        <div className="controls" style={{ marginTop: 12 }}>
+          <div className="button-container" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={handleSolve} disabled={solving}>
+              {solving ? "Solving..." : "Solve (otomatis)"}
+            </button>
+
+            <button onClick={regenerateSameDifficulty} disabled={solving}>
+              Regenerate (same difficulty)
+            </button>
+
+            <button onClick={resetToOriginal} disabled={solving}>
+              Reset to original
+            </button>
+          </div>
+
+        </div>
+        <div className="dropdown" style={{ marginTop: 8 }}>
           <button onClick={() => setOpen(!open)}>{selected} </button>
           {open && (
             <div className="dropdown-menu">
@@ -418,21 +506,56 @@ const App = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {solveTime && (
-        <p className="solve-time">
-          Waktu penyelesaian level <b>{selected}</b>: <b>{solveTime} detik</b>
+        {solveTime && (
+          <p className="solve-time" style={{ marginTop: 12 }}>
+            Waktu algoritma DFS (optimasi MRV + lookup){fastMode ? " — fast mode (no animation)" : ""}: <b>{solveTime} detik</b>
+          </p>
+        )}
+
+        <p style={{ marginTop: 12 }}>
+          Isi angka 1–9 sesuai aturan Sudoku. Jika merah, berarti melanggar aturan.
+          <br />
+          Pilih level terlebih dahulu untuk memulai permainan.
         </p>
-      )}
-
-      <p>
-        Isi angka 1–9 sesuai aturan Sudoku. Jika merah, berarti melanggar
-        aturan.
-        <br />
-        Pilih level terlebih dahulu untuk memulai permainan.
-      </p>
-    </div>
+      </div>
+      <div className="app-container" style={{ marginTop: 20 }}>
+        <h2>Video Tutorial Bermain Sudoku</h2>
+        <iframe
+          title="youtube"
+          src="https://www.youtube.com/embed/1oTDTHmzj_Q"
+          width="100%"
+          height="650"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      </div>
+      <div className="created-container">
+        <h1>Dibuat Oleh</h1>
+        <div className="created">
+          <div className="video-container">
+            <img className="video" src="eri.jpeg" alt="erika" />
+            <label>Erika P</label>
+          </div>
+          <div className="video-container">
+            <img className="video" src="ang.jpeg" alt="angel" />
+            <label>Angel V</label>
+          </div>
+          <div className="video-container">
+            <img className="video" src="ken.jpeg" alt="kenrick" />
+            <label>Kenrick</label>
+          </div>
+          <div className="video-container">
+            <img className="video" src="glo.jpeg" alt="glorina" />
+            <label>Glorina A</label>
+          </div>
+          <div className="video-container">
+            <img className="video" src="sthe.jpeg" alt="stheffen" />
+            <label>Stheffen</label>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
