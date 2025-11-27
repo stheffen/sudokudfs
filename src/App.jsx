@@ -581,6 +581,7 @@ const App = () => {
                   className="dropdown-item"
                   onClick={() => {
                     setSelected(opt);
+                    createNewPuzzle(opt);
                     setOpen(false);
                   }}
                 >
