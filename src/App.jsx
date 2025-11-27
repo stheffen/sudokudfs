@@ -545,6 +545,17 @@ const App = () => {
                   key={`${rIdx}-${cIdx}`}
                   value={cell === 0 ? "" : cell}
                   onChange={(e) => handleChange(rIdx, cIdx, e.target.value)}
+                  onKeyDown={(e) => {
+                    const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                    if (allowed.includes(e.key)) return;
+
+                    if (!/^[1-9]$/.test(e.key)) {
+                      e.preventDefault(); // blok selain angka 1-9
+                    }
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[1-9]"
                   className={`board-cell ${errors[rIdx][cIdx] ? "error" : ""} ${isOriginal ? "original" : ""} ${borders3x3}`}
                   maxLength={1}
                   readOnly={solving || isOriginal}
