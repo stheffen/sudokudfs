@@ -465,8 +465,10 @@ const App = () => {
     <>
       <audio ref={audioRef} src="backsound.mp3" preload="auto" playsInline />
       <div className="app-container">
+        {/*
         <h1>Tugas Sistem Multimedia</h1>
-        <h2>Penyelesaian Sudoku (DFS)</h2>
+        */}
+        <h2>Sudoku</h2>
         <div>
           <strong>Waktu pengerjaan manual:</strong>{" "}
           <span>{formatSeconds(manualElapsed)}</span>
@@ -583,7 +585,7 @@ const App = () => {
           </p>
         )}
 
-        <p style={{ marginTop: 12 }}>
+        <p style={{ marginTop: 30, textAlign: 'center' }}>
           Isi angka 1–9 sesuai aturan Sudoku. Jika merah, berarti melanggar aturan.
           <br />
           Pilih level terlebih dahulu untuk memulai permainan.
@@ -603,7 +605,7 @@ const App = () => {
       </div>
 
       <div className="created-container">
-        <h1>Dibuat Oleh</h1>
+        <h2>Dibuat Oleh</h2>
         <div className="created">
           <div className="video-container">
             <img className="video" src="eri.jpeg" alt="erika" />
