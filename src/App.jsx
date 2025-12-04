@@ -465,10 +465,7 @@ const App = () => {
     <>
       <audio ref={audioRef} src="backsound.mp3" preload="auto" playsInline />
       <div className="app-container">
-        {/*
-        <h1>Tugas Sistem Multimedia</h1>
-        */}
-        <h2>Sudoku</h2>
+        <h1>SUDOKU</h1>
         <div>
           <strong>Waktu pengerjaan manual:</strong>{" "}
           <span>{formatSeconds(manualElapsed)}</span>
